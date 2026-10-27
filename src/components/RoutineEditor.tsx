@@ -207,6 +207,7 @@ export default function RoutineEditor({
                   tags={[...new Set([activityLabel(ex.type), ...ex.tags])]}
                 />
                 <ExerciseFields
+                  perSeries
                   notes={false}
                   exercise={ex}
                   onChange={(next) =>

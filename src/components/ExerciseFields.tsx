@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from "lucide-react";
-import { type Exercise } from "../data";
+import { routineSets, withRoutineSets, type Exercise } from "../data";
 import { Chips } from "./Tags";
 import { Photo } from "./Media";
 import { defaultExerciseImage } from "../media";
@@ -9,13 +9,122 @@ export function ExerciseFields({
   onChange,
   disabled = false,
   notes = true,
+  perSeries = false,
 }: {
   exercise: Exercise;
   onChange: (e: Exercise) => void;
   disabled?: boolean;
   notes?: boolean;
+  perSeries?: boolean;
 }) {
   const unit = useUnits();
+  if (perSeries && e.type === "strength") {
+    const sets = routineSets(e);
+    return (
+      <div className="routine-sets">
+        <label className="field-label">
+          Series
+          <input
+            aria-label={`${e.name}: Series`}
+            type="number"
+            inputMode="numeric"
+            required
+            min={1}
+            max={100}
+            step={1}
+            value={e.sets}
+            disabled={disabled}
+            onChange={(event) => {
+              const count = Number(event.target.value);
+              if (!Number.isInteger(count) || count < 1 || count > 100) return;
+              onChange(
+                withRoutineSets(
+                  e,
+                  Array.from({ length: count }, (_, i) => ({
+                    ...(sets[i] ?? sets.at(-1)!),
+                  })),
+                ),
+              );
+            }}
+          />
+        </label>
+        <table className="routine-sets-table">
+          <caption>Series de {e.name}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Serie</th>
+              <th scope="col">Repeticiones</th>
+              <th scope="col">Peso ({unit})</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sets.map((set, index) => (
+              <tr key={index}>
+                <th scope="row">{index + 1}</th>
+                {(["reps", "weight"] as const).map((key) => (
+                  <td key={key}>
+                    <input
+                      type="number"
+                      required
+                      disabled={disabled}
+                      inputMode={key === "reps" ? "numeric" : "decimal"}
+                      min={key === "reps" ? 1 : 0}
+                      step={key === "reps" ? 1 : "any"}
+                      aria-label={`${e.name}: serie ${index + 1} ${key === "reps" ? "repeticiones" : `peso (${unit})`}`}
+                      value={
+                        key === "weight"
+                          ? displayWeight(set.weight, unit)
+                          : set.reps
+                      }
+                      onChange={(event) =>
+                        onChange(
+                          withRoutineSets(
+                            e,
+                            sets.map((s, i) =>
+                              i === index
+                                ? {
+                                    ...s,
+                                    [key]:
+                                      key === "weight"
+                                        ? kilograms(
+                                            Number(event.target.value),
+                                            unit,
+                                          )
+                                        : Number(event.target.value),
+                                  }
+                                : s,
+                            ),
+                          ),
+                        )
+                      }
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button
+          type="button"
+          className="text-link"
+          disabled={disabled}
+          onClick={() =>
+            onChange(
+              withRoutineSets(
+                e,
+                sets.map(() => ({ ...sets[0] })),
+              ),
+            )
+          }
+        >
+          Aplicar a todas las series
+        </button>
+        <p className="form-help">
+          Copia las repeticiones y el peso de la primera serie a las demás.
+        </p>
+      </div>
+    );
+  }
   const fields =
     e.type === "cardio"
       ? [
@@ -321,6 +430,8 @@ export function ExerciseRecords({
   );
 }
 export function exerciseSummary(e: Exercise, unit: WeightUnit = "kg") {
+  if (e.type === "strength" && !e.performedSets && e.plannedSets)
+    return exerciseSummary({ ...e, performedSets: e.plannedSets }, unit);
   if (e.type === "strength" && e.performedSets)
     return `${e.performedSets.length} series · ${e.performedSets.map((s) => `${displayWeight(s.weight, unit)} ${unit} × ${s.reps}`).join(" / ")}`;
   return e.type === "cardio"

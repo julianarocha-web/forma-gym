@@ -9,6 +9,14 @@ import {
 } from "@testing-library/react";
 import App from "../src/App";
 import Progress from "../src/components/Progress";
+import RoutineEditor from "../src/components/RoutineEditor";
+import {
+  saveRoutine,
+  loadData,
+  completeSession,
+  routineSets,
+} from "../src/data";
+import { sessionMetric } from "../src/progress";
 import {
   dateKey,
   formatDate,
@@ -26,6 +34,92 @@ function start() {
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Rutinas" }));
 }
+test("rutina por serie: adapta valores anteriores, copia, aplica y persiste al reabrir", () => {
+  let data = initialData();
+  const routine = structuredClone(data.routines[0]);
+  routine.exercises = [routine.exercises[0]];
+  const name = routine.exercises[0].name;
+  function editor() {
+    return render(
+      <RoutineEditor
+        routine={data.routines.find((r) => r.id === routine.id)!}
+        catalog={data.catalog}
+        onSaveExercise={() => true}
+        onClose={() => {}}
+        onSave={(r) => {
+          data = saveRoutine(data, r);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          return true;
+        }}
+      />,
+    );
+  }
+  data.routines = [routine];
+  let view = editor();
+  assert.equal(
+    screen.getByLabelText(`${name}: serie 1 peso (kg)`).getAttribute("value"),
+    String(routine.exercises[0].weight),
+  );
+  fireEvent.change(screen.getByLabelText(`${name}: Series`), {
+    target: { value: "4" },
+  });
+  for (const [i, weight] of [0, 10, 15, 15].entries()) {
+    fireEvent.change(
+      screen.getByLabelText(`${name}: serie ${i + 1} peso (kg)`),
+      { target: { value: String(weight) } },
+    );
+    fireEvent.change(
+      screen.getByLabelText(`${name}: serie ${i + 1} repeticiones`),
+      { target: { value: "10" } },
+    );
+  }
+  fireEvent.change(screen.getByLabelText(`${name}: Series`), {
+    target: { value: "5" },
+  });
+  assert.equal(
+    (screen.getByLabelText(`${name}: serie 5 peso (kg)`) as HTMLInputElement)
+      .value,
+    "15",
+  );
+  fireEvent.change(screen.getByLabelText(`${name}: Series`), {
+    target: { value: "4" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Guardar rutina" }));
+  view.unmount();
+  data = loadData(localStorage);
+  const expected = [0, 10, 15, 15].map((weight) => ({ weight, reps: 10 }));
+  assert.deepEqual(routineSets(data.routines[0].exercises[0]), expected);
+  const completed = completeSession(
+    data,
+    data.routines[0],
+    dateKey(),
+    data.routines[0].exercises,
+    "",
+  );
+  assert.deepEqual(
+    completed.sessions.at(-1)!.exercises[0].performedSets,
+    expected,
+  );
+  assert.equal(sessionMetric(completed.sessions.at(-1)!.exercises, "reps"), 40);
+  assert.equal(
+    sessionMetric(completed.sessions.at(-1)!.exercises, "weight"),
+    15,
+  );
+  view = editor();
+  assert.equal(
+    (screen.getByLabelText(`${name}: serie 3 peso (kg)`) as HTMLInputElement)
+      .value,
+    "15",
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Aplicar a todas las series" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Guardar rutina" }));
+  assert.deepEqual(
+    data.routines[0].exercises[0].plannedSets,
+    Array.from({ length: 4 }, () => ({ weight: 0, reps: 10 })),
+  );
+});
 function addHipRoutine(name: string, weight: number) {
   fireEvent.click(screen.getByRole("button", { name: "Crear rutina" }));
   const dialog = screen.getByRole("dialog");
@@ -54,9 +148,12 @@ function addHipRoutine(name: string, weight: number) {
   fireEvent.click(
     within(dialog).getByRole("button", { name: "Seleccionar Hip thrust" }),
   );
-  fireEvent.change(within(dialog).getByLabelText("Hip thrust: Peso (kg)"), {
-    target: { value: String(weight) },
-  });
+  fireEvent.change(
+    within(dialog).getByLabelText("Hip thrust: serie 1 peso (kg)"),
+    {
+      target: { value: String(weight) },
+    },
+  );
   fireEvent.click(
     within(dialog).getByRole("button", { name: "Guardar rutina" }),
   );
@@ -160,11 +257,6 @@ test("crear ejercicio en catálogo permite seleccionarlo después y registrar se
   fireEvent.change(screen.getByLabelText("Elegí qué querés entrenar"), {
     target: { value: r.id },
   });
-  fireEvent.click(
-    screen.getByRole("button", {
-      name: "Registrar series con valores distintos",
-    }),
-  );
   fireEvent.change(
     screen.getByLabelText("Peso libre propio: serie 1 peso (kg)"),
     { target: { value: "20" } },

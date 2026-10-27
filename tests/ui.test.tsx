@@ -163,7 +163,7 @@ test("registrar cargas reales, editar y eliminar la rutina conserva el historial
   fireEvent.click(screen.getByRole("button", { name: "Editar", exact: true }));
   let dialog = screen.getByRole("dialog");
   fireEvent.change(
-    within(dialog).getByLabelText("Sentadilla con barra: Peso (kg)"),
+    within(dialog).getByLabelText("Sentadilla con barra: serie 1 peso (kg)"),
     { target: { value: "90" } },
   );
   fireEvent.click(

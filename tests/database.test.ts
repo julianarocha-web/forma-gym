@@ -134,6 +134,10 @@ test("PostgreSQL: instalación nueva 001 → 002 → 003 → 004, transacciones 
     }
     let fixture = initialData();
     const routine = fixture.routines[0];
+    routine.exercises[0].plannedSets = Array.from(
+      { length: routine.exercises[0].sets },
+      (_, i) => ({ weight: i * 5, reps: 10 - i }),
+    );
     fixture = completeSession(
       fixture,
       routine,
@@ -212,6 +216,7 @@ test("PostgreSQL: instalación nueva 001 → 002 → 003 → 004, transacciones 
       "round-trip conserva historial y pesos/repeticiones distintos por serie",
       async () => {
         assert.equal(first.revision, 1);
+        assert.deepEqual(first.data.routines, fixture.routines);
         assert.deepEqual(first.data.sessions, fixture.sessions);
         const sets = await db.query<{ weight_kg: string; reps: number }>(
           "select weight_kg,reps from public.forma_workout_sets where session_exercise_id=$1 order by set_index",

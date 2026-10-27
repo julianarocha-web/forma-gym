@@ -24,7 +24,11 @@ export default function Workout({
   );
   const key = `${date}-${routine.id}`;
   const [rows, setRows] = useState(() =>
-    structuredClone(data.drafts[key] ?? routine.exercises),
+    structuredClone(data.drafts[key] ?? routine.exercises).map((e) =>
+      e.type === "strength" && e.plannedSets && !e.performedSets
+        ? { ...e, performedSets: structuredClone(e.plannedSets) }
+        : e,
+    ),
   );
   const exercises = completed?.exercises ?? rows;
   const [dirty, setDirty] = useState(false);

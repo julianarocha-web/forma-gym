@@ -25,6 +25,7 @@ export type StrengthSet = { weight: number; reps: number };
 export type Exercise = V2Exercise & {
   exerciseId: string;
   performedSets?: StrengthSet[];
+  plannedSets?: StrengthSet[];
   uniformLegacy?: boolean;
   image?: ImageRef | null;
 };
@@ -45,6 +46,25 @@ export type AppData = {
   drafts: Record<string, Exercise[]>;
 };
 export const STORAGE_KEY = "forma-data-v3";
+// Expand legacy uniform prescriptions lazily, without rewriting existing history.
+export function routineSets(e: Exercise): StrengthSet[] {
+  return structuredClone(
+    e.plannedSets ??
+      Array.from({ length: Math.min(100, Math.max(1, e.sets)) }, () => ({
+        reps: e.reps,
+        weight: e.weight,
+      })),
+  );
+}
+export function withRoutineSets(e: Exercise, sets: StrengthSet[]): Exercise {
+  return {
+    ...e,
+    plannedSets: sets,
+    sets: sets.length,
+    reps: sets[0].reps,
+    weight: sets[0].weight,
+  };
+}
 export const newDefinition = (): ExerciseDefinition => ({
   id: crypto.randomUUID(),
   name: "",
@@ -225,6 +245,23 @@ export function validateData(value: unknown): asserts value is AppData {
         "Series registradas inválidas",
       );
     }
+    if (e.plannedSets !== undefined) {
+      assert(
+        Array.isArray(e.plannedSets) &&
+          e.plannedSets.length > 0 &&
+          e.plannedSets.length <= 100 &&
+          e.plannedSets.length === e.sets &&
+          e.plannedSets.every(
+            (s) =>
+              object(s) &&
+              Number.isFinite(s.weight) &&
+              s.weight >= 0 &&
+              Number.isInteger(s.reps) &&
+              s.reps > 0,
+          ),
+        "Series planificadas inválidas",
+      );
+    }
   }
 }
 export function loadData(storage: Pick<Storage, "getItem">): AppData {
@@ -278,7 +315,10 @@ export function saveRoutine(data: AppData, r: Routine): AppData {
     exercises: r.exercises.map((e) => {
       const def = data.catalog.find((d) => d.id === e.exerciseId);
       assert(def, "Elegí un ejercicio del catálogo");
-      return withGeneral(e, def);
+      const row = withGeneral(e, def);
+      return row.type === "strength"
+        ? withRoutineSets(row, routineSets(row))
+        : row;
     }),
   };
   return {
@@ -355,12 +395,13 @@ export function completeSession(
       return {
         ...structuredClone(e),
         uniformLegacy: false,
-        performedSets: e.performedSets
-          ? structuredClone(e.performedSets)
-          : Array.from({ length: e.sets }, () => ({
-              weight: e.weight,
-              reps: e.reps,
-            })),
+        performedSets:
+          e.performedSets || e.plannedSets
+            ? structuredClone(e.performedSets ?? e.plannedSets!)
+            : Array.from({ length: e.sets }, () => ({
+                weight: e.weight,
+                reps: e.reps,
+              })),
       };
     }
     assert(
