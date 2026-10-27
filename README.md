@@ -4,7 +4,7 @@ Aplicación de React, TypeScript, Vite y Tailwind para organizar rutinas, regist
 
 **Configuración necesaria:** seguí [la guía de Supabase](docs/SUPABASE.md) para ejecutar las migraciones, configurar correos y redirecciones, desplegar la función segura de eliminación y probar dos usuarios. No se crearon recursos remotos automáticamente. `.env.example` contiene solamente placeholders públicos.
 
-**Correcciones:** las tarjetas de rutinas tienen **Editar/Eliminar** visibles. Cada sesión completada permite **Corregir registro** o **Eliminar registro** con confirmación, manteniendo copias privadas de los valores anteriores. Para habilitarlo en Supabase existente, ejecutá solo la nueva migración `202610270003_session_corrections.sql`. Uso, conservación y pruebas en [docs/CORRECCIONES.md](docs/CORRECCIONES.md).
+**Correcciones:** las tarjetas de rutinas tienen **Editar/Eliminar** visibles. Cada sesión completada permite **Corregir registro** o **Eliminar registro** con confirmación, manteniendo copias privadas de los valores anteriores. Con la 003 original ya instalada, seguí [la actualización controlada a 004](docs/INSTALAR-004.md), con chequeos de solo lectura, comparación de la cantidad de auditorías y sincronización del historial sin repetir 001/002/003. Uso y conservación en [docs/CORRECCIONES.md](docs/CORRECCIONES.md).
 
 ## Diseño y fotografías
 

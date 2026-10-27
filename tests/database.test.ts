@@ -9,13 +9,9 @@ import {
   type AppData,
 } from "../src/data";
 
-test("PostgreSQL: migración, transacciones, series e aislamiento RLS entre A, B y anónimo", async (t) => {
-  const db = new PGlite();
-  const a = "11111111-1111-4111-8111-111111111111";
-  const b = "22222222-2222-4222-8222-222222222222";
-  try {
-    await db.exec(`
-      create role authenticated; create role anon;
+async function bootstrap(db: PGlite, a: string, b: string) {
+  await db.exec(`
+      create role authenticated; create role anon; create role authenticator;
       create schema auth; create schema storage;
       create table auth.users(id uuid primary key);
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
@@ -28,18 +24,88 @@ test("PostgreSQL: migración, transacciones, series e aislamiento RLS entre A, B
       create function storage.foldername(text) returns text[] language sql immutable as $$ select (string_to_array($1,'/'))[1:array_length(string_to_array($1,'/'),1)-1] $$;
       create function storage.filename(text) returns text language sql immutable as $$ select (string_to_array($1,'/'))[array_length(string_to_array($1,'/'),1)] $$;
       insert into auth.users values('${a}'),('${b}');
-    `);
+  `);
+}
+
+test("PostgreSQL: instalación nueva 001 → 002 → 003 → 004, transacciones y RLS", async (t) => {
+  const db = new PGlite();
+  const a = "11111111-1111-4111-8111-111111111111";
+  const b = "22222222-2222-4222-8222-222222222222";
+  try {
+    await bootstrap(db, a, b);
     await db.exec(
       await readFile("supabase/migrations/202610270001_forma.sql", "utf8"),
     );
+    const preflight = await readFile("supabase/checks/before_003.sql", "utf8");
+    const beforeUpgrade = await readFile(
+      "supabase/checks/before_004.sql",
+      "utf8",
+    );
+    const postflight = (
+      await readFile("supabase/checks/after_004.sql", "utf8")
+    ).replace(
+      "expected_audit_count bigint := null",
+      "expected_audit_count bigint := 0",
+    );
+    await t.test(
+      "preflight rechaza 002 faltante y no modifica la base",
+      async () => {
+        await assert.rejects(() => db.exec(preflight), /catalogo de 002/);
+        await db.exec("rollback");
+      },
+    );
     await db.exec(
       await readFile("supabase/migrations/202610270002_catalog.sql", "utf8"),
+    );
+    await t.test(
+      "preflight acepta 001 y 002 instaladas sin historial CLI",
+      async () => {
+        await db.exec(preflight);
+      },
     );
     await db.exec(
       await readFile(
         "supabase/migrations/202610270003_session_corrections.sql",
         "utf8",
       ),
+    );
+    await t.test(
+      "instalación nueva: 003 conserva el SQL original y 004 protege sin auditorías previas",
+      async () => {
+        await db.exec(beforeUpgrade);
+        const legacy = await db.query<{
+          invoker: boolean;
+          direct_insert: boolean;
+        }>(`select not prosecdef as invoker,
+        has_table_privilege('authenticated','public.forma_session_corrections','INSERT') as direct_insert
+        from pg_proc where oid='public.forma_correct_session(jsonb,text,bigint,text)'::regprocedure`);
+        assert.deepEqual(legacy.rows[0], {
+          invoker: true,
+          direct_insert: true,
+        });
+        await db.exec(
+          await readFile(
+            "supabase/migrations/202610270004_protect_session_audit.sql",
+            "utf8",
+          ),
+        );
+      },
+    );
+    await t.test(
+      "postflight valida 004 y detecta permisos directos inseguros",
+      async () => {
+        await db.exec(postflight);
+        await assert.rejects(() => db.exec(preflight), /hay objetos de 003/);
+        await db.exec("rollback");
+        await db.exec(
+          "grant insert on public.forma_session_corrections to authenticated",
+        );
+        await assert.rejects(() => db.exec(postflight), /permisos inesperados/);
+        await db.exec(
+          "rollback; revoke insert on public.forma_session_corrections from authenticated",
+        );
+        await db.exec(postflight);
+      },
     );
     async function asUser(id: string) {
       await db.exec(
@@ -85,6 +151,45 @@ test("PostgreSQL: migración, transacciones, series e aislamiento RLS entre A, B
       "Real",
     );
     await asUser(a);
+    await t.test(
+      "la auditoría no admite inserciones inventadas ni cambios directos del cliente",
+      async () => {
+        for (const owner of [a, b]) {
+          await assert.rejects(
+            () =>
+              db.query(
+                "insert into public.forma_session_corrections(owner_id,action_id,session_id,operation,before_session,base_revision,request_fingerprint) values($1,$2,'inventado','edit','{}',0,'inventado')",
+                [owner, "0".repeat(64)],
+              ),
+            /permission denied/,
+          );
+        }
+        await assert.rejects(
+          () =>
+            db.query(
+              "update public.forma_session_corrections set before_session='{}'",
+            ),
+          /permission denied/,
+        );
+        await assert.rejects(
+          () => db.query("delete from public.forma_session_corrections"),
+          /permission denied/,
+        );
+        const roles = await db.query<{ safe: boolean }>(`select
+        not rolcanlogin and not rolsuper and not rolbypassrls and not rolcreaterole
+        and not rolcreatedb and not rolreplication and rolinherit
+        and not pg_has_role('authenticated',oid,'MEMBER')
+        and not pg_has_role('anon',oid,'MEMBER') as safe
+        from pg_roles where rolname='forma_session_corrector'`);
+        assert.equal(roles.rows[0].safe, true);
+        const rpc = await db.query<{ safe: boolean }>(`select prosecdef
+        and proowner='forma_session_corrector'::regrole
+        and 'row_security=on'=any(proconfig)
+        and 'search_path=""'=any(proconfig) as safe
+        from pg_proc where oid='public.forma_correct_session(jsonb,text,bigint,text)'::regprocedure`);
+        assert.equal(rpc.rows[0].safe, true);
+      },
+    );
     await t.test(
       "catálogo general disponible con permisos de solo lectura",
       async () => {
@@ -435,6 +540,293 @@ test("PostgreSQL: migración, transacciones, series e aislamiento RLS entre A, B
     );
   } catch (error) {
     throw new Error((error as Error).message);
+  } finally {
+    await db.close();
+  }
+});
+
+test("PostgreSQL: actualizar 003 antigua con datos y auditorías existentes conserva todas las filas", async (t) => {
+  const db = new PGlite();
+  const a = "33333333-3333-4333-8333-333333333333";
+  const b = "44444444-4444-4444-8444-444444444444";
+  const upgrade = await readFile(
+    "supabase/migrations/202610270004_protect_session_audit.sql",
+    "utf8",
+  );
+  const preflight = await readFile("supabase/checks/before_004.sql", "utf8");
+  const postflight = await readFile("supabase/checks/after_004.sql", "utf8");
+  const historyReport = await readFile(
+    "supabase/checks/migration_history.sql",
+    "utf8",
+  );
+  async function asUser(id: string) {
+    await db.exec(
+      `reset role; select set_config('request.jwt.claim.sub','${id}',false); set role authenticated;`,
+    );
+    await db.query("select public.forma_initialize_account()");
+  }
+  async function load() {
+    return (
+      await db.query<{ value: { data: AppData; revision: number } }>(
+        "select public.forma_load_workspace() as value",
+      )
+    ).rows[0].value;
+  }
+  async function snapshotRows() {
+    await db.exec("reset role");
+    const tables = (
+      await db.query<{ name: string }>(
+        "select tablename as name from pg_tables where schemaname='public' and tablename like 'forma_%' order by tablename",
+      )
+    ).rows;
+    const result: Record<string, unknown[]> = {};
+    for (const { name } of tables) {
+      assert.match(name, /^forma_[a-z_]+$/);
+      result[name] = (
+        await db.query(
+          `select to_jsonb(t) as row from public.${name} t order by to_jsonb(t)::text`,
+        )
+      ).rows;
+    }
+    return result;
+  }
+  const checkedPostflight = (count: number) =>
+    postflight.replace(
+      "expected_audit_count bigint := null",
+      `expected_audit_count bigint := ${count}`,
+    );
+  try {
+    await bootstrap(db, a, b);
+    for (const migration of [
+      "202610270001_forma.sql",
+      "202610270002_catalog.sql",
+      "202610270003_session_corrections.sql",
+    ]) {
+      await db.exec(await readFile(`supabase/migrations/${migration}`, "utf8"));
+    }
+    for (const owner of [a, b]) {
+      await asUser(owner);
+      let fixture = initialData();
+      const routine = fixture.routines[0];
+      fixture = completeSession(
+        fixture,
+        routine,
+        dateKey(),
+        routine.exercises.map((e) => ({
+          ...e,
+          performedSets: [{ weight: e.weight, reps: e.reps }],
+        })),
+        "Conservar",
+      );
+      await db.query("select public.forma_save_workspace($1::jsonb,0,null)", [
+        JSON.stringify(fixture),
+      ]);
+      await db.query(
+        "update public.forma_profiles set display_name='Perfil existente',theme='dark',unit='lb' where owner_id=$1",
+        [owner],
+      );
+      const old = await load();
+      const corrected = structuredClone(old.data);
+      corrected.sessions[0].exercises[0].performedSets![0].weight += 2.5;
+      await db.query(
+        "select public.forma_correct_session($1::jsonb,$2,$3,$4)",
+        [
+          JSON.stringify(corrected),
+          corrected.sessions[0].id,
+          old.revision,
+          (owner === a ? "a" : "b").repeat(64),
+        ],
+      );
+    }
+    // Reproduce the old INSERT vulnerability, then preserve even this unverified legacy row.
+    await asUser(a);
+    await db.query(
+      "insert into public.forma_session_corrections(owner_id,action_id,session_id,operation,before_session,base_revision,request_fingerprint) values($1,$2,'legacy-unverified','edit',$3::jsonb,0,'legacy')",
+      [a, "0".repeat(64), JSON.stringify({ legacyUnverified: true })],
+    );
+    const stateA = await load();
+    await asUser(b);
+    const stateB = await load();
+    const beforeRows = await snapshotRows();
+    const beforeCount = beforeRows.forma_session_corrections.length;
+    assert.equal(beforeCount, 3);
+    const beforeOid = (
+      await db.query<{ oid: number }>(
+        "select 'public.forma_correct_session(jsonb,text,bigint,text)'::regprocedure::oid as oid",
+      )
+    ).rows[0].oid;
+
+    await t.test(
+      "chequeos de solo lectura aceptan 003 antigua y reportan historial ausente/existente",
+      async () => {
+        await db.exec(historyReport);
+        await db.exec(preflight);
+        await db.exec(`create schema supabase_migrations;
+        create table supabase_migrations.schema_migrations(version text primary key,name text);
+        insert into supabase_migrations.schema_migrations values('202610270001','forma'),('202610270002','catalog'),('202610270003','session_corrections');`);
+        await db.exec(historyReport);
+        await db.exec(preflight);
+      },
+    );
+    await t.test(
+      "un permiso heredado inesperado revierte atómicamente toda la 004",
+      async () => {
+        await db.exec(
+          "create role legacy_audit_writer; grant legacy_audit_writer to authenticated; grant insert on public.forma_session_corrections to legacy_audit_writer",
+        );
+        await assert.rejects(
+          () => db.exec(upgrade),
+          /Permisos heredados inesperados/,
+        );
+        await db.exec("rollback");
+        assert.deepEqual(await snapshotRows(), beforeRows);
+        assert.equal(
+          (
+            await db.query(
+              "select 1 from pg_roles where rolname='forma_session_corrector'",
+            )
+          ).rows.length,
+          0,
+        );
+        assert.equal(
+          (
+            await db.query<{ prosecdef: boolean }>(
+              "select prosecdef from pg_proc where oid='public.forma_correct_session(jsonb,text,bigint,text)'::regprocedure",
+            )
+          ).rows[0].prosecdef,
+          false,
+        );
+        await db.exec(
+          "revoke insert on public.forma_session_corrections from legacy_audit_writer",
+        );
+        await db.exec(preflight);
+      },
+    );
+    await t.test(
+      "004 conserva cantidad, contenido, fechas y propietarios; no cambia OID ni ejecuta correcciones",
+      async () => {
+        await db.exec(upgrade);
+        assert.deepEqual(await snapshotRows(), beforeRows);
+        assert.equal(
+          (
+            await db.query<{ oid: number }>(
+              "select 'public.forma_correct_session(jsonb,text,bigint,text)'::regprocedure::oid as oid",
+            )
+          ).rows[0].oid,
+          beforeOid,
+        );
+        await db.exec(checkedPostflight(beforeCount));
+        await asUser(a);
+        assert.deepEqual(await load(), stateA);
+        await asUser(b);
+        assert.deepEqual(await load(), stateB);
+      },
+    );
+    await t.test(
+      "postflight exige la cantidad previa y detecta un valor diferente",
+      async () => {
+        await db.exec("reset role");
+        await assert.rejects(() => db.exec(postflight), /reemplazar null/);
+        await db.exec("rollback");
+        await assert.rejects(
+          () => db.exec(checkedPostflight(beforeCount + 1)),
+          /auditorias antes/,
+        );
+        await db.exec("rollback");
+        await db.exec(checkedPostflight(beforeCount));
+      },
+    );
+    await t.test(
+      "repetir 004 falla sin modificar registros y no altera el historial por su cuenta",
+      async () => {
+        await assert.rejects(() => db.exec(upgrade), /funcion original de 003/);
+        await db.exec("rollback");
+        assert.deepEqual(await snapshotRows(), beforeRows);
+        assert.deepEqual(
+          (
+            await db.query(
+              "select version from supabase_migrations.schema_migrations order by version",
+            )
+          ).rows.map((v) => v.version),
+          ["202610270001", "202610270002", "202610270003"],
+        );
+        // Simulate only the CLI's history receipt; never rerun an old migration.
+        await db.exec(
+          "insert into supabase_migrations.schema_migrations values('202610270004','protect_session_audit')",
+        );
+        await db.exec(historyReport);
+      },
+    );
+    await t.test(
+      "después de actualizar, rechaza falsificación y permite una corrección auténtica con RLS",
+      async () => {
+        await asUser(a);
+        await assert.rejects(
+          () =>
+            db.query(
+              "insert into public.forma_session_corrections(owner_id,action_id,session_id,operation,before_session,base_revision,request_fingerprint) values($1,$2,'inventado','edit','{}',0,'inventado')",
+              [a, "f".repeat(64)],
+            ),
+          /permission denied/,
+        );
+        const next = structuredClone(stateA.data);
+        next.sessions[0].exercises[0].performedSets![0] = {
+          weight: 42.5,
+          reps: 7,
+        };
+        const args = [
+          JSON.stringify(next),
+          next.sessions[0].id,
+          stateA.revision,
+          "c".repeat(64),
+        ];
+        await db.query(
+          "select public.forma_correct_session($1::jsonb,$2,$3,$4)",
+          args,
+        );
+        const audit = (
+          await db.query<{ before_session: unknown; after_session: unknown }>(
+            "select before_session,after_session from public.forma_session_corrections where action_id=$1",
+            ["c".repeat(64)],
+          )
+        ).rows[0];
+        assert.deepEqual(audit.before_session, stateA.data.sessions[0]);
+        assert.deepEqual(audit.after_session, next.sessions[0]);
+        const result = await load();
+        assert.deepEqual(result.data, next);
+        await db.query(
+          "select public.forma_correct_session($1::jsonb,$2,$3,$4)",
+          args,
+        );
+        assert.deepEqual(await load(), result);
+        await asUser(b);
+        assert.deepEqual(await load(), stateB);
+        assert.equal(
+          (
+            await db.query(
+              "select * from public.forma_session_corrections where owner_id=$1",
+              [a],
+            )
+          ).rows.length,
+          0,
+        );
+        await assert.rejects(
+          () =>
+            db.query(
+              "select public.forma_correct_session($1::jsonb,$2,$3,$4)",
+              [
+                JSON.stringify(stateB.data),
+                next.sessions[0].id,
+                stateB.revision,
+                "d".repeat(64),
+              ],
+            ),
+          /no está disponible/,
+        );
+        await db.exec("reset role");
+        await db.exec(checkedPostflight(beforeCount + 1));
+      },
+    );
   } finally {
     await db.close();
   }
