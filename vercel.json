@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!_vercel/insights/|assets/|images/|theme-init.js|favicon.ico).*)",
+      "source": "/((?!_vercel/insights/|assets/|images/|theme-init\\.js$|favicon\\.(?:ico|svg)$|manifest\\.webmanifest$|apple-touch-icon\\.png$|icon-(?:192|512|maskable-512)\\.png$).*)",
       "destination": "/index.html"
     }
   ],
