@@ -133,6 +133,15 @@ test("PostgreSQL: instalación nueva 001 → 002 → 003 → 004, transacciones 
       ).rows[0].value;
     }
     let fixture = initialData();
+    fixture.plans = [
+      {
+        date: "2099-01-01",
+        status: "planned",
+        routineId: fixture.routines[0].id,
+        note: "Plan persistido",
+      },
+      { date: "2099-01-02", status: "rest", note: "Descanso persistido" },
+    ];
     const routine = fixture.routines[0];
     routine.exercises[0].plannedSets = Array.from(
       { length: routine.exercises[0].sets },
@@ -217,6 +226,7 @@ test("PostgreSQL: instalación nueva 001 → 002 → 003 → 004, transacciones 
       async () => {
         assert.equal(first.revision, 1);
         assert.deepEqual(first.data.routines, fixture.routines);
+        assert.deepEqual(first.data.plans, fixture.plans);
         assert.deepEqual(first.data.sessions, fixture.sessions);
         const sets = await db.query<{ weight_kg: string; reps: number }>(
           "select weight_kg,reps from public.forma_workout_sets where session_exercise_id=$1 order by set_index",

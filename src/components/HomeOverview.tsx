@@ -5,11 +5,13 @@ import {
   CheckCheck,
   ChevronRight,
   Dumbbell,
+  Moon,
   TrendingUp,
 } from "lucide-react";
 import { dateKey, formatDate, type AppData } from "../data";
 import { Photo } from "./Media";
 import { defaultRoutineImage } from "../media";
+import { weekSchedule } from "../schedule";
 
 export default function HomeOverview({
   data,
@@ -40,20 +42,8 @@ export default function HomeOverview({
     )
     .sort((a, b) => a.date.localeCompare(b.date))[0];
   const next = data.routines.find((r) => r.id === plan?.routineId);
-  const monday = new Date();
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    return {
-      key: dateKey(d),
-      label: d.toLocaleDateString("es-AR", { weekday: "short" }).slice(0, 2),
-      number: d.getDate(),
-    };
-  });
-  const activeDays = days.filter((d) =>
-    sessions.some((s) => s.date === d.key),
-  ).length;
+  const days = weekSchedule(data, today);
+  const activeDays = days.filter((d) => d.sessions.length > 0).length;
   return (
     <div className="home-overview">
       <section className="home-hero card">
@@ -90,7 +80,10 @@ export default function HomeOverview({
           </span>
         </div>
       </section>
-      <section className="card week-overview">
+      <section
+        className="card week-overview"
+        aria-label="Tu constancia · Esta semana"
+      >
         <div className="section-heading">
           <div>
             <span className="eyebrow">TU CONSTANCIA</span>
@@ -103,26 +96,88 @@ export default function HomeOverview({
         </div>
         <div className="week-strip">
           {days.map((d) => {
-            const done = sessions.some((s) => s.date === d.key);
             return (
               <button
                 key={d.key}
-                className={`${done ? "week-complete" : ""} ${d.key === today ? "week-today" : ""}`}
+                className={`week-${d.status === "completed" ? "complete" : d.status} ${d.key === today ? "week-today" : ""}`}
                 onClick={() => onDate(d.key)}
-                aria-label={`Organizar ${d.key}${done ? ", completado" : ""}`}
+                aria-current={d.key === today ? "date" : undefined}
+                aria-label={`Organizar ${d.key}: ${d.description}`}
+                title={d.description}
               >
                 <span>{d.label}</span>
                 <strong>{d.number}</strong>
-                <i>{done ? <Check size={12} /> : null}</i>
+                <i aria-hidden="true">
+                  {d.status === "completed" ? (
+                    <Check size={12} />
+                  ) : d.status === "planned" ? (
+                    <Dumbbell size={12} />
+                  ) : d.status === "rest" ? (
+                    <Moon size={12} />
+                  ) : null}
+                </i>
               </button>
             );
           })}
         </div>
-        <div className="week-caption">
-          <span>
-            <i />
-            Entrenamiento realizado
+        <div className="week-legend" aria-label="Estados de la semana">
+          <span className="week-key-completed">
+            <Check size={13} />
+            Completado
           </span>
+          <span className="week-key-planned">
+            <Dumbbell size={13} />
+            Planificado
+          </span>
+          <span className="week-key-rest">
+            <Moon size={13} />
+            Descanso
+          </span>
+          <span className="week-key-empty">
+            <span aria-hidden="true">—</span>Sin planificación
+          </span>
+        </div>
+        <ul className="week-agenda" aria-label="Actividades de esta semana">
+          {days
+            .filter((d) => d.activities.length)
+            .map((d) => (
+              <li key={d.key}>
+                <button
+                  className={`week-activity-card week-activity-${d.status}`}
+                  onClick={() => onDate(d.key)}
+                  aria-label={`Ver ${d.key}: ${d.description}`}
+                >
+                  <span className="week-agenda-date">
+                    {d.label} {d.number}
+                  </span>
+                  <span className="week-agenda-activities">
+                    {d.activities.map((a) => (
+                      <span key={a.key} className={`week-key-${a.status}`}>
+                        {a.status === "completed" ? (
+                          <Check size={13} />
+                        ) : a.status === "rest" ? (
+                          <Moon size={13} />
+                        ) : (
+                          <Dumbbell size={13} />
+                        )}
+                        <span>
+                          {a.name}
+                          <small>{a.label}</small>
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                  <ChevronRight size={14} />
+                </button>
+              </li>
+            ))}
+        </ul>
+        {!days.some((d) => d.activities.length) && (
+          <p className="calendar-hint">
+            Tu semana todavía no tiene actividades. Tocá un día para planificar.
+          </p>
+        )}
+        <div className="week-caption">
           <button className="text-link" onClick={onCalendar}>
             Ver calendario
             <ChevronRight size={14} />

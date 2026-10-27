@@ -8,6 +8,7 @@ import { exerciseSummary } from "./ExerciseFields";
 import { afterCommit, reportCommit, type CommitResult } from "../cloud/types";
 import { useUnits } from "../units";
 import SessionActions from "./SessionActions";
+import { daySchedule } from "../schedule";
 export default function DayDialog({
   data,
   date,
@@ -87,6 +88,13 @@ export default function DayDialog({
       <div className={`day-status state-${state.status}`}>
         {stateLabels[state.status]}
       </div>
+      {daySchedule(data, date)
+        .activities.filter((a) => a.status !== "completed")
+        .map((a) => (
+          <p className="calendar-hint" key={a.key}>
+            {a.name} · {a.label}
+          </p>
+        ))}
       {state.sessions.map((s) => (
         <details className="completed-detail" key={s.id} open>
           <summary>

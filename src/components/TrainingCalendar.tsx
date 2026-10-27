@@ -6,7 +6,8 @@ import {
   ChevronRight,
   Moon,
 } from "lucide-react";
-import { dateKey, dayState, type AppData } from "../data";
+import { dateKey, type AppData } from "../data";
+import { daySchedule } from "../schedule";
 export const stateLabels: Record<string, string> = {
   completed: "Completado",
   rest: "Descanso",
@@ -76,18 +77,17 @@ export default function TrainingCalendar({
             const date = dateKey(
               new Date(month.getFullYear(), month.getMonth(), i + 1),
             );
-            const { status, sessions, plan } = dayState(data, date);
-            const name =
-              sessions.map((s) => s.name).join(", ") ||
-              data.routines.find((r) => r.id === plan?.routineId)?.name ||
-              (plan?.routineId ? "Rutina eliminada" : "");
+            const { status, activities, description } = daySchedule(data, date);
+            const name = activities.map((a) => a.name).join(", ");
             return (
               <button
                 key={date}
                 className={`calendar-day state-${status} ${date === dateKey() ? "is-today" : ""}`}
                 onClick={() => onSelect(date)}
                 aria-current={date === dateKey() ? "date" : undefined}
-                aria-label={`${date}: ${stateLabels[status]}${name ? `, ${name}` : ""}`}
+                aria-label={`${date}: ${stateLabels[status]}${name && status !== "rest" ? `, ${name}` : ""}`}
+                aria-description={description}
+                title={description}
               >
                 <span className="calendar-number">{i + 1}</span>
                 {status !== "empty" && (
