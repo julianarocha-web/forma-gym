@@ -2,6 +2,7 @@ import { build } from "esbuild";
 import { spawnSync } from "node:child_process";
 await build({
   entryPoints: [
+    "tests/analytics.test.ts",
     "tests/data.test.ts",
     "tests/catalog-progress.test.ts",
     "tests/ui.test.tsx",
@@ -24,6 +25,7 @@ const result = spawnSync(
     "--import",
     "./.test-build/setup.js",
     "--test",
+    ".test-build/analytics.test.js",
     ".test-build/data.test.js",
     ".test-build/catalog-progress.test.js",
     ".test-build/catalog-ui.test.js",

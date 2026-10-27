@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!assets/|images/|theme-init.js|favicon.ico).*)",
+      "source": "/((?!_vercel/insights/|assets/|images/|theme-init.js|favicon.ico).*)",
       "destination": "/index.html"
     }
   ],
@@ -12,7 +12,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         {
           "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
+          "value": "no-referrer"
         },
         { "key": "X-Frame-Options", "value": "DENY" }
       ]
