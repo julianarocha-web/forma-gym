@@ -1,0 +1,896 @@
+/* Extend Forma's original visual system with free routines and date planning. */
+.action-menu.menu-open {
+  z-index: 5;
+}
+.action-menu > .menu-trigger {
+  width: 44px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #839477;
+}
+.menu-open > .menu-trigger {
+  background: #f0f4eb;
+}
+.action-menu > .menu-items {
+  display: flex;
+  flex-direction: column;
+}
+.metrics-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.card {
+  min-width: 0;
+}
+.metric {
+  min-width: 0;
+}
+.metric-value {
+  white-space: normal;
+}
+input,
+select,
+textarea {
+  font-size: 14px;
+  min-height: 44px;
+  max-width: 100%;
+}
+textarea {
+  font: inherit;
+  border: 1px solid #e4e7e0;
+  border-radius: 8px;
+  padding: 11px;
+  background: #fff;
+  color: #3d443a;
+  resize: vertical;
+}
+textarea:focus {
+  outline: 2px solid #a3b995;
+  outline-offset: 2px;
+}
+.icon-button {
+  min-height: 40px;
+  min-width: 40px;
+}
+.primary-button,
+.secondary-button {
+  min-height: 44px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.text-link {
+  min-height: 40px;
+  font-size: 12px;
+}
+.field-label {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.field-label select {
+  width: 100%;
+  font-size: 14px;
+}
+.field-label.compact {
+  margin: 14px 0;
+}
+.section-heading p,
+.page-heading p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.page-heading h1 {
+  max-width: none;
+}
+.routine-title {
+  align-items: flex-start;
+}
+.routine-title > div {
+  flex: 1;
+}
+.routine-title h3 {
+  overflow-wrap: anywhere;
+}
+.routine-title p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.routine-title .pill {
+  gap: 5px;
+}
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 20px;
+  background: #f0f4eb;
+  color: #657a59;
+  font-size: 11px;
+  padding: 5px 10px;
+  line-height: 1.4;
+  border: 1px solid transparent;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.tag-picker {
+  border: 0;
+  padding: 0;
+  margin: 18px 0;
+  min-width: 0;
+}
+.tag-picker legend {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #6e7f62;
+}
+.tag-picker button.tag-chip {
+  min-height: 36px;
+  background: #fafbf8;
+  border-color: #e1e6db;
+  color: #7a8671;
+}
+.tag-picker button.chosen {
+  background: #e6efde;
+  border-color: #9caf8c;
+  color: #4f6c40;
+}
+.custom-tag {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+.custom-tag input {
+  font-size: 12px;
+  min-height: 37px;
+  max-width: 220px;
+  flex: 1;
+}
+.custom-tag button {
+  background: #f3f6ee;
+  border-radius: 8px;
+}
+.record-exercise {
+  padding: 18px 0;
+  border-bottom: 1px solid #e9ede3;
+}
+.record-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.record-title h3 {
+  font-size: 14px;
+  flex: 1;
+  min-width: 130px;
+  line-height: 1.4;
+}
+.record-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.record-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  color: #6c7e60;
+  min-width: 0;
+}
+.record-fields label > span {
+  font-size: 9px;
+  color: #929e89;
+}
+.record-fields input {
+  width: 100%;
+  font-size: 16px;
+  padding: 10px;
+  background: #fafbf8;
+}
+.record-fields input:disabled {
+  opacity: 1;
+  color: #64765a;
+  background: #f2f6ec;
+}
+.exercise-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 13px;
+  font-size: 11px;
+  color: #6c7e60;
+}
+.exercise-notes span {
+  color: #97a28c;
+}
+.exercise-notes input {
+  flex-basis: 100%;
+  width: 100%;
+  font-size: 12px;
+  background: #fcfdfb;
+  min-height: 40px;
+}
+.exercise-tags {
+  font-size: 10px;
+  color: #879779;
+  margin-top: 7px;
+}
+.exercise-tags .chips {
+  margin-top: 8px;
+}
+.exercise-tags summary,
+.tag-details summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.form-section-title {
+  font-size: 16px;
+  margin: 27px 0 14px;
+}
+.tag-details {
+  font-size: 12px;
+  color: #748666;
+  margin-top: 14px;
+}
+.edit-name input {
+  font-size: 14px;
+  min-height: 44px;
+}
+.edit-name > span {
+  flex-shrink: 0;
+}
+.edit-exercise {
+  padding: 15px;
+}
+.workout-footer {
+  flex-wrap: wrap;
+}
+.workout-footer > span {
+  font-size: 10px;
+}
+.empty-state {
+  padding: 35px 15px;
+  line-height: 1.6;
+}
+.empty-state p {
+  font-size: 12px;
+}
+.empty-state .primary-button {
+  margin-top: 22px;
+}
+.routine-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+.routine-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: #7b8b70;
+}
+.routine-toolbar select {
+  min-width: 210px;
+}
+.routine-grid {
+  align-items: stretch;
+}
+.routine-editor-card {
+  display: flex;
+  flex-direction: column;
+}
+.routine-editor-card h2 {
+  overflow-wrap: anywhere;
+}
+.routine-description {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #86947b;
+  margin: 13px 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.routine-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 12px;
+  margin: 20px 0 23px;
+  color: #7c8b70;
+}
+.routine-preview small {
+  font-size: 11px;
+  color: #9daa91;
+}
+.routine-editor-card > .primary-button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+.action-menu {
+  position: relative;
+  z-index: 3;
+}
+.action-menu[open] {
+  z-index: 5;
+}
+.action-menu summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  border-radius: 8px;
+  color: #839477;
+}
+.action-menu summary::-webkit-details-marker {
+  display: none;
+}
+.action-menu[open] summary {
+  background: #f0f4eb;
+}
+.action-menu > div {
+  position: absolute;
+  right: 0;
+  top: 43px;
+  background: #fff;
+  box-shadow: 0 8px 30px #283d2020;
+  border: 1px solid #e3e9db;
+  border-radius: 10px;
+  padding: 6px;
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+}
+.action-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  min-height: 44px;
+}
+.action-menu button:hover {
+  background: #f3f6ef;
+}
+.danger-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ad6d58;
+  font-size: 12px;
+  min-height: 44px;
+}
+.danger-button {
+  background: #ad735f;
+  border-color: #ad735f;
+}
+.confirm-copy {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #7d8b73;
+  margin-top: 24px;
+}
+.day-actions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.day-status {
+  display: inline-flex;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  margin-top: 16px;
+}
+.day-editor {
+  padding: 6px 0 20px;
+  border-bottom: 1px solid #e8ede2;
+}
+.calendar-hint {
+  font-size: 11px;
+  color: #829176;
+  line-height: 1.7;
+  margin-top: 16px;
+}
+.training-calendar .calendar-top strong {
+  font-size: 14px;
+}
+.training-calendar .calendar-grid {
+  gap: 7px;
+}
+.training-calendar .day-label {
+  font-size: 11px;
+  color: #8f9e81;
+}
+.training-calendar .calendar-day {
+  min-height: 98px;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e9ede3;
+  border-radius: 10px;
+  color: #7e8e71;
+  position: relative;
+  background: #fcfdfb;
+  overflow: hidden;
+}
+.calendar-number {
+  font-size: 14px;
+  font-weight: 550;
+  text-align: left;
+}
+.calendar-state-icon {
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  display: flex;
+}
+.calendar-routine {
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding-top: 8px;
+  overflow-wrap: anywhere;
+}
+.state-completed,
+.training-calendar .state-completed {
+  background: #eaf2e3;
+  color: #668452;
+}
+.state-planned,
+.training-calendar .state-planned {
+  background: #fcf2dc;
+  color: #a58538;
+}
+.state-rest,
+.training-calendar .state-rest {
+  background: #eaf0f7;
+  color: #728ba3;
+}
+.state-empty {
+  background: #f7f9f4;
+  color: #8c9982;
+}
+.training-calendar .calendar-day.is-today {
+  outline: 2px solid #718964;
+  outline-offset: 1px;
+}
+.training-calendar .calendar-day.is-today .calendar-number {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.state-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.state-legend > span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+}
+.compact-calendar .calendar-day {
+  min-height: 47px !important;
+  padding: 7px !important;
+  gap: 1px !important;
+  align-items: center !important;
+}
+.compact-calendar .calendar-number {
+  font-size: 11px;
+}
+.compact-calendar .calendar-state-icon {
+  position: static;
+  justify-content: center;
+}
+.compact-calendar .calendar-state-icon svg {
+  width: 11px;
+  height: 11px;
+}
+.compact-calendar .calendar-grid {
+  gap: 5px;
+}
+.compact-calendar .calendar-hint {
+  font-size: 9px;
+}
+.compact-calendar .state-legend {
+  gap: 5px;
+}
+.compact-calendar .state-legend > span {
+  padding: 5px;
+  font-size: 8px;
+  gap: 3px;
+}
+.full-calendar {
+  max-width: 1100px;
+}
+.completed-detail {
+  border: 1px solid #dfe8d7;
+  background: #f6f9f2;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 20px;
+  color: #74876a;
+}
+.completed-detail summary {
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.6;
+}
+.completed-detail > div:not(.session-correction):not(.session-actions) {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 13px 0;
+  border-bottom: 1px solid #e1e8d9;
+  font-size: 12px;
+}
+.completed-detail strong {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.completed-detail p {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #85957b;
+  white-space: pre-wrap;
+}
+.session-note {
+  padding-top: 13px;
+}
+.exercise-summary {
+  margin: 10px 0;
+  font-size: 13px;
+  color: #7e916f;
+}
+.history-list.card {
+  margin-top: 23px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 0;
+  text-align: left;
+  border-bottom: 1px solid #edf0e9;
+}
+.history-item strong {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+}
+.history-item small {
+  display: block;
+  font-size: 11px;
+  color: #9aa78e;
+  margin-top: 6px;
+}
+.history-item > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: #91a080;
+}
+.chart-values {
+  font-size: 11px;
+  color: #809371;
+  margin-top: 14px;
+}
+.chart-values summary {
+  cursor: pointer;
+  padding: 7px 0;
+}
+.chart-values div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 8px;
+  border-bottom: 1px solid #edf0e9;
+}
+.edit-modal {
+  width: 650px;
+}
+.next-card .text-link {
+  margin-top: 20px;
+}
+.section-heading select {
+  font-size: 12px;
+}
+.error p {
+  margin-top: 8px;
+}
+.content .metric-detail {
+  font-size: 10px;
+  line-height: 1.5;
+}
+.content .metric-value {
+  line-height: 1.3;
+}
+.training-calendar .calendar-top {
+  margin-top: 24px;
+}
+@media (max-width: 1000px) {
+  .content .metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .metric {
+    padding: 16px 10px;
+    gap: 8px;
+  }
+  .metric-icon {
+    padding: 7px;
+  }
+  .metric-value {
+    font-size: 23px;
+  }
+  .content .metric-detail {
+    font-size: 9px;
+  }
+  .metric:last-child .metric-value {
+    font-size: 17px;
+  }
+  .full-calendar .section-heading {
+    align-items: flex-start;
+  }
+  .record-fields {
+    gap: 10px;
+  }
+}
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea,
+  .field-label select,
+  .exercise-notes input,
+  .edit-name input,
+  .section-heading select {
+    font-size: 16px;
+  }
+  .content .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .content .metric:last-child {
+    grid-column: 1/-1;
+    align-items: center;
+  }
+  .content .metric:last-child > div {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .metric:last-child .metric-value {
+    font-size: 17px;
+    margin: 0 0 0 auto;
+  }
+  .metric:last-child .metric-detail {
+    flex-basis: 100%;
+    text-align: right;
+  }
+  .metric:last-child .text-xs {
+    font-size: 11px;
+  }
+  .metrics-grid .metric {
+    padding: 15px 12px;
+  }
+  .record-fields {
+    gap: 8px;
+  }
+  .record-fields label {
+    font-size: 10px;
+  }
+  .record-fields input {
+    font-size: 16px;
+    min-height: 46px;
+  }
+  .record-title h3 {
+    font-size: 14px;
+  }
+  .exercise-notes input {
+    min-height: 44px;
+  }
+  .workout-footer .primary-button {
+    width: 100%;
+  }
+  .routine-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .routine-toolbar select {
+    width: 100%;
+  }
+  .routine-toolbar .primary-button {
+    align-self: flex-start;
+  }
+  .routine-grid {
+    gap: 16px;
+  }
+  .routine-editor-card {
+    padding: 20px;
+  }
+  .routine-preview {
+    font-size: 13px;
+  }
+  .tag-chip {
+    font-size: 11px;
+  }
+  .full-calendar {
+    padding: 18px 10px;
+  }
+  .full-calendar .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 4px;
+    gap: 12px;
+  }
+  .full-calendar .section-heading p {
+    font-size: 11px;
+  }
+  .training-calendar .calendar-grid {
+    gap: 4px;
+  }
+  .training-calendar .calendar-day {
+    min-height: 76px;
+    padding: 7px 4px;
+    border-radius: 7px;
+    gap: 7px;
+  }
+  .calendar-number {
+    font-size: 12px;
+  }
+  .calendar-state-icon {
+    position: static;
+    justify-content: flex-start;
+  }
+  .calendar-state-icon svg {
+    height: 13px;
+    width: 13px;
+  }
+  .calendar-routine {
+    font-size: 8px;
+    padding-top: 0;
+    -webkit-line-clamp: 2;
+  }
+  .training-calendar .calendar-day.is-today {
+    outline-width: 1.5px;
+    outline-offset: 0;
+  }
+  .state-legend {
+    gap: 5px;
+  }
+  .state-legend > span {
+    font-size: 9px;
+    padding: 5px;
+  }
+  .training-calendar .calendar-top strong {
+    font-size: 14px;
+  }
+  .full-calendar .day-label {
+    font-size: 10px;
+  }
+  .compact-calendar .calendar-day {
+    min-height: 49px !important;
+  }
+  .compact-calendar .calendar-state-icon {
+    align-self: center;
+  }
+  .edit-modal {
+    padding: 20px 15px;
+  }
+  .edit-exercise {
+    padding: 12px;
+  }
+  .record-fields label > span {
+    font-size: 8px;
+  }
+  .day-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .day-actions > button {
+    width: 100%;
+  }
+  .day-actions .danger-link {
+    justify-content: center;
+  }
+  .history-item {
+    gap: 10px;
+  }
+  .history-item strong {
+    font-size: 12px;
+  }
+  .history-item > span:last-child {
+    font-size: 9px;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .history-item small {
+    font-size: 10px;
+  }
+  .section-heading:has(select) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .section-heading select {
+    max-width: 100%;
+    width: 100%;
+  }
+  .chart-wrap {
+    margin-top: 15px;
+  }
+  .confirm-copy {
+    font-size: 13px;
+  }
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+  .completed-detail > div:not(.session-correction):not(.session-actions) {
+    font-size: 11px;
+  }
+  .content .page-heading p {
+    font-size: 12px;
+  }
+  .page-footer {
+    font-size: 10px;
+  }
+  .toast {
+    line-height: 1.6;
+    max-width: calc(100vw - 30px);
+    width: 420px;
+  }
+  .page-heading h1 {
+    font-size: 27px;
+  }
+  .content .empty-state p {
+    font-size: 13px;
+  }
+}
+@media (max-width: 360px) {
+  .record-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .record-fields label:last-child {
+    grid-column: 1/-1;
+  }
+  .calendar-routine {
+    font-size: 7px;
+  }
+  .calendar-state-icon svg {
+    width: 11px;
+  }
+  .calendar-number {
+    font-size: 11px;
+  }
+}

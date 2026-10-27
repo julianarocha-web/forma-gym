@@ -1,0 +1,6 @@
+project_id = "forma"
+
+[functions.delete-account]
+verify_jwt = false
+# The handler validates the Bearer JWT with Auth.getUser, then reauthenticates
+# the current password. No administrative client is ever shipped to React.

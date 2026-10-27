@@ -1,0 +1,13 @@
+node_modules
+.npm-cache
+dist
+*.local
+*.tsbuildinfo
+.test-build
+.asset-review
+.env.local
+.env
+.env.*
+!.env.example
+supabase/.temp
+supabase/.branches

@@ -1,0 +1,542 @@
+.form-help {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #839077;
+  margin: 13px 0;
+}
+.catalog-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #dfe6d8;
+  border-radius: 10px;
+  padding: 0 13px;
+  margin-top: 22px;
+  color: #889b7b;
+  background: #fbfcf9;
+}
+.catalog-search input {
+  border: 0;
+  box-shadow: none;
+  background: none;
+  width: 100%;
+  padding: 14px 0;
+  font-size: 15px;
+}
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.catalog-toolbar > .field-label {
+  min-width: 0;
+  flex: 1;
+  max-width: 260px;
+}
+.catalog-toolbar > .primary-button {
+  align-self: flex-end;
+  margin-bottom: 22px;
+}
+.catalog-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+.catalog-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e4eade;
+  border-radius: 11px;
+  padding: 15px;
+}
+.catalog-item > div:first-child {
+  min-width: 0;
+}
+.catalog-item h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.catalog-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.catalog-item .tag-chip {
+  font-size: 10px;
+  padding: 4px 8px;
+}
+.catalog-notice {
+  background: #fcf3df;
+  color: #99804b;
+  padding: 15px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.routine-exercise-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.routine-exercise-title h3 {
+  font-size: 15px;
+  flex: 1;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.routine-exercise-title .icon-button {
+  min-width: 34px;
+}
+.add-exercise-button {
+  margin: 18px 0;
+}
+.routine-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.performed-set-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.performed-set-row {
+  display: grid;
+  grid-template-columns: 55px minmax(0, 1fr) minmax(0, 1fr) 35px;
+  gap: 10px;
+  align-items: center;
+}
+.performed-set-row > span {
+  font-size: 11px;
+  color: #899c7a;
+  padding-top: 18px;
+}
+.performed-set-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 10px;
+  color: #768a67;
+}
+.performed-set-row input {
+  width: 100%;
+  font-size: 16px;
+  min-width: 0;
+}
+.performed-set-row .icon-button {
+  min-width: 30px;
+  padding: 5px;
+  margin-top: 16px;
+}
+.progress-exercise-label {
+  font-size: 11px;
+  color: #7b8c70;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.exercise-progress .progress-exercise-label select {
+  max-width: 270px;
+  font-size: 13px;
+  min-width: 180px;
+}
+.progress-exercise-heading {
+  margin-top: 22px;
+  border-top: 1px solid #edf0e9;
+  padding-top: 19px;
+}
+.progress-exercise-heading h3 {
+  font-size: 22px;
+  margin-bottom: 11px;
+}
+.period-filter {
+  display: flex;
+  gap: 5px;
+  border: 1px solid #e7ecdf;
+  border-radius: 9px;
+  padding: 4px;
+  background: #fafcf7;
+  margin: 23px 0 17px;
+}
+.period-filter button {
+  font-size: 11px;
+  padding: 10px 8px;
+  min-height: 40px;
+  flex: 1;
+  border-radius: 6px;
+  color: #829773;
+}
+.period-filter button.selected {
+  background: #e8f0e1;
+  color: #587746;
+  font-weight: 600;
+  box-shadow: 0 1px 3px #4861330a;
+}
+.progress-metric-label {
+  margin: 0 0 10px;
+  font-size: 11px;
+}
+.progress-metric-label select {
+  font-size: 13px;
+}
+.metric-explanation {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #829076;
+}
+.progress-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 19px 0;
+  margin: 16px 0;
+  border-top: 1px solid #edf0e8;
+  border-bottom: 1px solid #edf0e8;
+  gap: 10px;
+}
+.progress-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.progress-summary > div:last-child {
+  text-align: right;
+}
+.progress-summary span {
+  font-size: 10px;
+  color: #8a997d;
+}
+.progress-summary strong {
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.7px;
+  color: #637d53;
+}
+.progress-summary small {
+  font-size: 14px;
+  font-weight: 400;
+  color: #91a384;
+}
+.progress-summary time {
+  font-size: 10px;
+  color: #8e9e81;
+}
+.progress-summary > svg {
+  color: #b2bea7;
+  flex-shrink: 0;
+}
+.chart-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  margin: 21px 0 0;
+}
+.chart-heading h4 {
+  font-size: 12px;
+  color: #6f855f;
+  font-weight: 600;
+}
+.chart-heading h4 span {
+  font-weight: 400;
+}
+.chart-heading > span {
+  font-size: 10px;
+  color: #97a38d;
+}
+.progress-dot {
+  cursor: pointer;
+  outline: none;
+}
+.progress-dot:focus > circle:last-child {
+  stroke: #456035;
+  stroke-width: 3;
+}
+.selected-point {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #eff5e9;
+  border: 1px solid #dfe9d5;
+  border-radius: 9px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #7a8e6a;
+  line-height: 1.5;
+}
+.selected-point strong {
+  color: #5d7a4b;
+  font-size: 14px;
+  font-weight: 600;
+}
+.exercise-session-history {
+  margin-top: 29px;
+}
+.exercise-session-history > h3 {
+  font-size: 16px;
+}
+.progress-history-entry {
+  border: 1px solid #e4eade;
+  border-radius: 10px;
+  margin-top: 16px;
+  padding: 16px;
+}
+.progress-history-entry > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.progress-history-entry header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.progress-history-entry time {
+  font-size: 12px;
+  font-weight: 600;
+  color: #667f55;
+}
+.progress-history-entry header span {
+  font-size: 11px;
+  color: #9aa78e;
+  overflow-wrap: anywhere;
+}
+.history-point-button {
+  font-size: 12px;
+  font-weight: 550;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f0f5e9;
+  color: #6e885d;
+  white-space: nowrap;
+  min-height: 44px;
+}
+.history-point-button:disabled {
+  color: #9ba790;
+  background: #f7f9f2;
+  opacity: 1;
+}
+.sets-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 12px;
+  text-align: left;
+  color: #7c8f6d;
+}
+.sets-history-table caption {
+  text-align: left;
+  font-size: 10px;
+  color: #8f9e81;
+  padding: 6px 0 10px;
+}
+.sets-history-table th {
+  font-size: 10px;
+  color: #9aa88e;
+  font-weight: 500;
+  padding: 8px 0;
+  border-bottom: 1px solid #e4eade;
+}
+.sets-history-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f3eb;
+}
+.sets-history-table td:not(:first-child),
+.sets-history-table th:not(:first-child) {
+  text-align: right;
+}
+.sets-history-table tbody tr:last-child td {
+  border: 0;
+}
+.legacy-set-record {
+  padding-top: 15px;
+  font-size: 12px;
+  color: #7c906c;
+  line-height: 1.7;
+}
+.legacy-set-record p {
+  font-size: 10px;
+  color: #97a68b;
+  margin-top: 8px;
+}
+.cardio-history-values {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 18px 0 2px;
+}
+.cardio-history-values > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.cardio-history-values dt {
+  font-size: 10px;
+  color: #9aa88e;
+}
+.cardio-history-values dd {
+  font-size: 12px;
+  margin: 0;
+  color: #7c906c;
+}
+.historical-note {
+  font-size: 11px;
+  color: #8e9f80;
+  line-height: 1.6;
+  margin-top: 10px;
+  white-space: pre-wrap;
+}
+.progress-empty {
+  padding: 35px 10px;
+}
+.exercise-progress .chart-wrap {
+  margin-top: 8px;
+}
+.exercise-progress .recharts-tooltip-wrapper {
+  z-index: 5;
+}
+.exercise-progress .chart-wrap:focus-visible {
+  outline: 2px solid #9cb28a;
+}
+@media (max-width: 640px) {
+  .catalog-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0;
+  }
+  .catalog-toolbar > .field-label {
+    max-width: none;
+    margin-bottom: 12px;
+  }
+  .catalog-toolbar > .primary-button {
+    align-self: flex-start;
+    margin: 0;
+  }
+  .catalog-item {
+    padding: 13px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .catalog-item-actions {
+    justify-content: flex-end;
+  }
+  .catalog-item-actions > .secondary-button {
+    flex: 1;
+    max-width: 170px;
+  }
+  .catalog-search input {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .catalog-definition .field-label select {
+    font-size: 16px;
+  }
+  .routine-toolbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .routine-toolbar-actions button {
+    width: 100%;
+  }
+  .routine-toolbar .routine-toolbar-actions .primary-button {
+    align-self: stretch;
+  }
+  .routine-exercise-title h3 {
+    font-size: 14px;
+  }
+  .routine-exercise-title {
+    gap: 4px;
+  }
+  .routine-exercise-title .icon-button {
+    min-width: 32px;
+    padding: 5px;
+  }
+  .performed-set-row {
+    grid-template-columns: 42px minmax(0, 1fr) minmax(0, 1fr) 30px;
+    gap: 7px;
+  }
+  .performed-set-row > span {
+    font-size: 10px;
+  }
+  .performed-set-row label {
+    font-size: 9px;
+  }
+  .performed-set-row input {
+    padding: 9px 6px;
+  }
+  .exercise-progress .progress-exercise-label {
+    font-size: 12px;
+    width: 100%;
+  }
+  .exercise-progress .progress-exercise-label select {
+    max-width: 100%;
+    width: 100%;
+    font-size: 16px;
+  }
+  .progress-exercise-heading h3 {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+  }
+  .period-filter {
+    gap: 2px;
+    padding: 3px;
+  }
+  .period-filter button {
+    font-size: 10px;
+    padding: 9px 4px;
+    min-height: 44px;
+  }
+  .progress-metric-label select {
+    font-size: 16px;
+  }
+  .progress-summary strong {
+    font-size: 27px;
+  }
+  .progress-summary span {
+    font-size: 9px;
+  }
+  .progress-summary time {
+    font-size: 10px;
+  }
+  .metric-explanation {
+    font-size: 12px;
+  }
+  .progress-history-entry {
+    padding: 13px;
+  }
+  .sets-history-table {
+    font-size: 12px;
+  }
+  .chart-heading h4 {
+    font-size: 11px;
+  }
+  .chart-heading > span {
+    font-size: 10px;
+  }
+  .history-point-button {
+    font-size: 11px;
+  }
+  .progress-history-entry time {
+    font-size: 12px;
+  }
+  .progress-history-entry header span {
+    font-size: 11px;
+  }
+}
