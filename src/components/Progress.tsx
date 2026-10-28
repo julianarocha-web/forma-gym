@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,7 +16,7 @@ import { activityLabel, formatDate, type AppData } from "../data";
 import {
   exerciseProgress,
   metricDetails,
-  type ProgressEntry,
+  weightRecords,
   type ProgressMetric,
   type ProgressPeriod,
 } from "../progress";
@@ -28,35 +29,43 @@ export default function Progress({ data }: { data: AppData }) {
   const unit = useUnits();
   const [selected, setSelected] = useState(data.catalog[0]?.id ?? "");
   const [period, setPeriod] = useState<ProgressPeriod>("all");
-  const [metric, setMetric] = useState<ProgressMetric>("weight");
+  const [metric, setMetric] = useState<ProgressMetric>("weightRange");
+  const [activeSeries, setActiveSeries] = useState("value");
   const [active, setActive] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const definition =
     data.catalog.find((e) => e.id === selected) ?? data.catalog[0];
   const allowed: ProgressMetric[] =
     definition?.type === "strength"
-      ? ["weight", "reps", "sets"]
+      ? ["weightRange", "weight", "reps", "sets"]
       : definition?.type === "cardio"
         ? ["duration", "distance"]
         : ["duration"];
   const actualMetric = allowed.includes(metric) ? metric : allowed[0];
+  const isWeight = actualMetric === "weight" || actualMetric === "weightRange";
+  const records = definition
+    ? weightRecords(exerciseProgress(data, definition.id, "weight", "all"))
+    : null;
   const details = {
     ...metricDetails[actualMetric],
-    ...(actualMetric === "weight" ? { unit } : {}),
+    ...(isWeight ? { unit } : {}),
   };
   const entries = definition
     ? exerciseProgress(data, definition.id, actualMetric, period).map(
         (entry) => ({
           ...entry,
+          minWeight: entry.minimum
+            ? displayWeight(entry.minimum.weight, unit)
+            : null,
           value:
-            entry.value !== null && actualMetric === "weight"
+            entry.value !== null && isWeight
               ? displayWeight(entry.value, unit)
               : entry.value,
         }),
       )
     : [];
   const known = entries.filter(
-    (e): e is ProgressEntry & { value: number } => e.value !== null,
+    (e): e is (typeof entries)[number] & { value: number } => e.value !== null,
   );
   const point = entries.find((e) => e.key === active && e.value !== null);
   const first = known[0],
@@ -71,28 +80,31 @@ export default function Progress({ data }: { data: AppData }) {
   function pointDot(props: {
     cx?: number;
     cy?: number;
-    payload?: ProgressEntry;
+    payload?: (typeof entries)[number];
+    dataKey?: unknown;
   }) {
     const { cx, cy, payload } = props;
-    if (
-      payload?.value === null ||
-      !payload ||
-      cx === undefined ||
-      cy === undefined
-    )
+    const isMin = props.dataKey === "minWeight";
+    const value = isMin ? payload?.minWeight : payload?.value;
+    const record = isMin ? payload?.minimum : payload?.maximum;
+    const select = () => {
+      setActive(payload!.key);
+      setActiveSeries(isMin ? "minWeight" : "value");
+    };
+    if (value == null || !payload || cx === undefined || cy === undefined)
       return <g />;
-    const label = `${formatDate(payload.date)}, ${payload.routineName}: ${number(payload.value)} ${details.unit}`;
+    const label = `${formatDate(payload.date)}, ${payload.routineName}: ${number(value)} ${details.unit}${isWeight ? ` · ${isMin ? "Mínimo" : "Máximo"}${record?.setNumber ? ` · Serie ${record.setNumber}` : ""}` : ""}`;
     return (
       <g
         key={payload.key}
         role="button"
         tabIndex={0}
         aria-label={label}
-        onClick={() => setActive(payload.key)}
+        onClick={select}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            setActive(payload.key);
+            select();
           }
         }}
         className="progress-dot"
@@ -102,7 +114,7 @@ export default function Progress({ data }: { data: AppData }) {
           cx={cx}
           cy={cy}
           r={active === payload.key ? 6 : 4.5}
-          fill={chartColor}
+          fill={isMin ? "#a78bfa" : chartColor}
           stroke="var(--color-surface)"
           strokeWidth={2}
         />
@@ -270,7 +282,7 @@ export default function Progress({ data }: { data: AppData }) {
                 <option key={m} value={m}>
                   {metricDetails[m].label}
                   {metricDetails[m].unit
-                    ? ` (${m === "weight" ? unit : metricDetails[m].unit})`
+                    ? ` (${m === "weight" || m === "weightRange" ? unit : metricDetails[m].unit})`
                     : ""}
                 </option>
               ))}
@@ -278,6 +290,35 @@ export default function Progress({ data }: { data: AppData }) {
           </label>
           <p className="metric-explanation">{details.explanation}</p>
         </>
+      )}
+      {isWeight && records && (
+        <div className="progress-summary">
+          {(
+            [
+              ["Peso mínimo registrado", records.minimum],
+              ["Peso máximo registrado", records.maximum],
+            ] as const
+          ).map(([label, record]) => (
+            <div key={label}>
+              <span>{label}</span>
+              <strong>
+                {record
+                  ? number(displayWeight(record.weight, unit))
+                  : "Sin registrar"}{" "}
+                {record && <small>{unit}</small>}
+              </strong>
+              {record && (
+                <>
+                  <time dateTime={record.date}>{formatDate(record.date)}</time>
+                  <span>
+                    {record.setNumber ? `Serie ${record.setNumber} · ` : ""}
+                    Primera vez · Todo el historial
+                  </span>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
       )}
       {actualMetric !== "sets" && known.length > 0 && (
         <>
@@ -347,13 +388,17 @@ export default function Progress({ data }: { data: AppData }) {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: "var(--color-secondary)" }}
-                  domain={[0, "auto"]}
+                  domain={
+                    actualMetric === "weightRange"
+                      ? ["dataMin", "dataMax"]
+                      : [0, "auto"]
+                  }
                 />
                 <Tooltip
                   filterNull
-                  formatter={(value) => [
+                  formatter={(value, name, item) => [
                     `${number(Number(value))} ${details.unit}`,
-                    details.label,
+                    `${name}${isWeight && item.payload?.[name === "Mínimo" ? "minimum" : "maximum"]?.setNumber ? ` · Serie ${item.payload[name === "Mínimo" ? "minimum" : "maximum"].setNumber}` : ""}`,
                   ]}
                   labelFormatter={(key) => {
                     const e = entries.find((e) => e.key === key);
@@ -367,7 +412,23 @@ export default function Progress({ data }: { data: AppData }) {
                     fontSize: 12,
                   }}
                 />
+                {actualMetric === "weightRange" && <Legend />}
+                {actualMetric === "weightRange" && (
+                  <Line
+                    type="linear"
+                    dataKey="minWeight"
+                    name="Mínimo"
+                    stroke="#a78bfa"
+                    strokeDasharray="5 4"
+                    strokeWidth={2.5}
+                    dot={pointDot}
+                    activeDot={false}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
                 <Line
+                  name={isWeight ? "Máximo" : details.label}
                   type="linear"
                   dataKey="value"
                   stroke={chartColor}
@@ -386,7 +447,25 @@ export default function Progress({ data }: { data: AppData }) {
                 {formatDate(point.date)} · {point.routineName}
               </span>
               <strong>
-                {details.label}: {number(point.value!)} {details.unit}
+                {actualMetric === "weightRange"
+                  ? activeSeries === "minWeight"
+                    ? "Mínimo"
+                    : "Máximo"
+                  : details.label}
+                :{" "}
+                {number(
+                  activeSeries === "minWeight" && actualMetric === "weightRange"
+                    ? point.minWeight!
+                    : point.value!,
+                )}{" "}
+                {details.unit}
+                {isWeight &&
+                  (activeSeries === "minWeight" &&
+                  actualMetric === "weightRange"
+                    ? point.minimum
+                    : point.maximum
+                  )?.setNumber &&
+                  ` · Serie ${(activeSeries === "minWeight" && actualMetric === "weightRange" ? point.minimum : point.maximum)!.setNumber}`}
               </strong>
             </div>
           )}
@@ -434,7 +513,10 @@ export default function Progress({ data }: { data: AppData }) {
                     className="history-point-button"
                     disabled={entry.value === null}
                     aria-label={`Ver valor del ${entry.date} en ${entry.routineName}`}
-                    onClick={() => setActive(entry.key)}
+                    onClick={() => {
+                      setActive(entry.key);
+                      setActiveSeries("value");
+                    }}
                   >
                     {entry.value === null
                       ? "Sin registrar"

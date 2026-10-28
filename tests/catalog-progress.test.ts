@@ -15,7 +15,111 @@ import {
   validateData,
   type ExerciseDefinition,
 } from "../src/data";
-import { exerciseProgress, periodStart, sessionMetric } from "../src/progress";
+import {
+  exerciseProgress,
+  periodStart,
+  sessionMetric,
+  weightExtremes,
+  weightRecords,
+} from "../src/progress";
+
+test("extremos por serie incluyen cero y conservan primera fecha sin modificar historial", () => {
+  const data = initialData();
+  const e = data.routines[0].exercises[0];
+  const exercise = {
+    ...e,
+    weight: 999,
+    performedSets: [0, 10, 30, 30].map((weight) => ({ weight, reps: 10 })),
+  };
+  data.sessions = ["2026-10-25", "2026-10-24"].map((date) => ({
+    id: date,
+    date,
+    routineId: "r",
+    name: "Hip thrust",
+    exercises: [exercise],
+  }));
+  const snapshot = JSON.stringify(data);
+  const entries = exerciseProgress(
+    data,
+    e.exerciseId,
+    "weightRange",
+    "all",
+    "2026-10-27",
+  );
+  assert.deepEqual(
+    entries.map((row) => [row.minimum?.weight, row.maximum?.weight, row.value]),
+    [
+      [10, 30, 30],
+      [10, 30, 30],
+    ],
+  );
+  const records = weightRecords(entries);
+  assert.equal(records.minimum?.date, "2026-10-24");
+  assert.equal(records.minimum?.weight, 10);
+  assert.equal(records.minimum?.setNumber, 2);
+  assert.equal(records.maximum?.date, "2026-10-24");
+  assert.equal(records.maximum?.setNumber, 3);
+  assert.equal(entries[0].exercises[0].performedSets?.length, 4);
+  assert.equal(sessionMetric([exercise], "weight"), 30);
+  assert.equal(JSON.stringify(data), snapshot);
+});
+
+test("extremos distinguen ausencias, series vacías y peso común histórico", () => {
+  const e = initialData().routines[0].exercises[0];
+  assert.deepEqual(weightExtremes([{ ...e, performedSets: [] }]), {
+    minimum: null,
+    maximum: null,
+  });
+  assert.deepEqual(
+    weightExtremes([{ ...e, weight: undefined } as unknown as typeof e]),
+    { minimum: null, maximum: null },
+  );
+  for (const weight of [0, 42.5]) {
+    const result = weightExtremes([{ ...e, weight }]);
+    assert.equal(result.minimum?.weight, weight > 0 ? weight : undefined);
+    assert.equal(result.maximum?.weight, weight);
+    assert.equal(result.minimum?.setNumber, undefined);
+  }
+  assert.deepEqual(weightRecords([]), { minimum: null, maximum: null });
+});
+
+test("mínimo histórico excluye cero y conserva pesos comunes positivos", () => {
+  const data = initialData();
+  const e = data.routines[0].exercises[0];
+  data.sessions = [
+    {
+      id: "zero",
+      date: "2026-10-24",
+      routineId: "r",
+      name: "Sesión",
+      exercises: [{ ...e, weight: 0 }],
+    },
+  ];
+  const records = () =>
+    weightRecords(
+      exerciseProgress(data, e.exerciseId, "weight", "all", "2026-10-27"),
+    );
+  assert.equal(records().minimum, null);
+  assert.equal(records().maximum?.weight, 0);
+  const zeroEntry = exerciseProgress(
+    data,
+    e.exerciseId,
+    "weightRange",
+    "all",
+    "2026-10-27",
+  )[0];
+  assert.equal(zeroEntry.minimum, null);
+  assert.equal(zeroEntry.value, null);
+  assert.equal(sessionMetric(data.sessions[0].exercises, "weight"), 0);
+  data.sessions.push({
+    ...data.sessions[0],
+    id: "positive",
+    date: "2026-10-25",
+    exercises: [{ ...e, weight: 5 }],
+  });
+  assert.equal(records().minimum?.weight, 5);
+  assert.equal(records().minimum?.date, "2026-10-25");
+});
 
 test("migración v2 reúne copias coincidentes por metadatos, conserva snapshots y no une variantes distintas", () => {
   const old = v2Data();

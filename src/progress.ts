@@ -1,8 +1,14 @@
 import { dateKey, type AppData, type Exercise } from "./data";
 export type ProgressMetric =
-  "weight" | "reps" | "sets" | "duration" | "distance";
+  "weightRange" | "weight" | "reps" | "sets" | "duration" | "distance";
 export type ProgressPeriod = "month" | "quarter" | "all";
 export const metricDetails = {
+  weightRange: {
+    label: "Peso mínimo y máximo por sesión",
+    unit: "kg",
+    explanation:
+      "Menor y mayor carga positiva registrada en cada sesión. Las sesiones con solo 0 kg quedan sin punto en este gráfico. Los indicadores muestran todo el historial; el peso mínimo registrado considera solo cargas mayores a 0 kg. En caso de empate, se muestra la primera fecha registrada.",
+  },
   weight: {
     label: "Peso máximo por sesión",
     unit: "kg",
@@ -41,7 +47,66 @@ export type ProgressEntry = {
   routineName: string;
   exercises: Exercise[];
   value: number | null;
+  minimum: WeightRecord | null;
+  maximum: WeightRecord | null;
 };
+export type WeightRecord = {
+  weight: number;
+  exerciseRowId: string;
+  setNumber?: number;
+};
+export function recordedWeights(exercises: Exercise[]): WeightRecord[] {
+  return exercises
+    .filter((e) => e.type === "strength")
+    .flatMap((e) =>
+      e.performedSets !== undefined
+        ? e.performedSets.flatMap((s, i) =>
+            known(s.weight)
+              ? [{ weight: s.weight, exerciseRowId: e.id, setNumber: i + 1 }]
+              : [],
+          )
+        : known(e.weight)
+          ? [{ weight: e.weight, exerciseRowId: e.id }]
+          : [],
+    );
+}
+export function weightExtremes(exercises: Exercise[]) {
+  const weights = recordedWeights(exercises);
+  return {
+    minimum: weights.reduce<WeightRecord | null>(
+      (best, row) =>
+        row.weight > 0 && (!best || row.weight < best.weight) ? row : best,
+      null,
+    ),
+    maximum: weights.reduce<WeightRecord | null>(
+      (best, row) => (!best || row.weight > best.weight ? row : best),
+      null,
+    ),
+  };
+}
+export function weightRecords(entries: ProgressEntry[]) {
+  const rows = [...entries].sort(
+    (a, b) => a.date.localeCompare(b.date) || a.key.localeCompare(b.key),
+  );
+  const all = rows.flatMap((entry) =>
+    recordedWeights(entry.exercises).map((record) => ({
+      ...record,
+      date: entry.date,
+      sessionId: entry.sessionId,
+    })),
+  );
+  return {
+    minimum: all.reduce<(typeof all)[number] | null>(
+      (best, row) =>
+        row.weight > 0 && (!best || row.weight < best.weight) ? row : best,
+      null,
+    ),
+    maximum: all.reduce<(typeof all)[number] | null>(
+      (best, row) => (!best || row.weight > best.weight ? row : best),
+      null,
+    ),
+  };
+}
 export function periodStart(period: ProgressPeriod, today = dateKey()): string {
   if (period === "all") return "0000-01-01";
   const d = new Date(`${today}T12:00:00`);
@@ -58,7 +123,7 @@ export function sessionMetric(
   metric: ProgressMetric,
 ): number | null {
   if (metric === "sets") return null;
-  if (metric === "weight") {
+  if (metric === "weight" || metric === "weightRange") {
     const weights = exercises
       .filter((e) => e.type === "strength")
       .flatMap((e) =>
@@ -67,7 +132,11 @@ export function sessionMetric(
           : [e.weight],
       )
       .filter(known);
-    return weights.length ? Math.max(...weights) : null;
+    const eligible =
+      metric === "weightRange"
+        ? weights.filter((weight) => weight > 0)
+        : weights;
+    return eligible.length ? Math.max(...eligible) : null;
   }
   if (metric === "reps") {
     const strength = exercises.filter((e) => e.type === "strength");
@@ -112,5 +181,9 @@ export function exerciseProgress(
     }))
     .filter((row) => row.exercises.length)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((row) => ({ ...row, value: sessionMetric(row.exercises, metric) }));
+    .map((row) => ({
+      ...row,
+      ...weightExtremes(row.exercises),
+      value: sessionMetric(row.exercises, metric),
+    }));
 }

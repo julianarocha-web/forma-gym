@@ -331,9 +331,30 @@ test("progreso filtra períodos y métricas, muestra series reales y responde a 
   });
   assert.ok(screen.getByText("Rutina A"));
   assert.ok(screen.getByText("Rutina B"));
+  assert.ok(screen.getByText("Peso mínimo registrado"));
+  assert.ok(screen.getByText("Peso máximo registrado"));
   fireEvent.click(
     screen.getByRole("button", {
-      name: `${formatDate(newDate)}, Rutina B: 55 kg`,
+      name: `${formatDate(newDate)}, Rutina B: 50 kg · Mínimo · Serie 1`,
+    }),
+  );
+  assert.ok(
+    screen.getByRole("status").textContent?.includes("Mínimo: 50 kg · Serie 1"),
+  );
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: `${formatDate(newDate)}, Rutina B: 55 kg · Máximo · Serie 2`,
+    }),
+  );
+  assert.ok(
+    screen.getByRole("status").textContent?.includes("Máximo: 55 kg · Serie 2"),
+  );
+  fireEvent.change(screen.getByLabelText("Métrica del progreso"), {
+    target: { value: "weight" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: `${formatDate(newDate)}, Rutina B: 55 kg · Máximo · Serie 2`,
     }),
   );
   assert.ok(
